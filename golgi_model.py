@@ -146,7 +146,7 @@ class GolgiModel:
         for it in range(max_iter):
             F = self.residual(x)
             norm = np.linalg.norm(F)
-            if verbose and it % 10 == 0:
+            if verbose and it % 8 == 0:
                 print(f"Iter {it}: ||F|| = {norm:.6e}")
             if norm < tol:
                 if verbose:

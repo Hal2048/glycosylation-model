@@ -83,6 +83,7 @@ def main():
 
     # ---------- 5. Build GolgiModel ----------
     enzyme_dist = build_enzyme_dist()
+    # print(enzyme_dist)
     model = GolgiModel(
         network=network,
         kinetics=kinetics,
@@ -91,7 +92,7 @@ def main():
         donor_conc=DONOR_CONC,
         initial_feed=initial_feed,
     )
-    print(f"Total variables: {n_structs} x {len(TAU)} = {n_structs * len(TAU)}")
+    # print(f"Total variables: {n_structs} x {len(TAU)} = {n_structs * len(TAU)}")
 
     # ---------- 6. Solve ----------
     # Damped iteration for small-scale debugging;
@@ -108,12 +109,14 @@ def main():
         print(f"  Compartment {j}: {total:.2f}")
 
     last_comp = final_concs[:, -1]
-    top_idx = np.argsort(last_comp)[-10:][::-1]
+    last_comp_norm = last_comp / last_comp.sum()
+    top_idx = np.argsort(last_comp_norm)[-10:][::-1]
+
     print("\nTop 10 glycoforms by concentration in TGN:")
     for idx in top_idx:
-        if last_comp[idx] > 0.001:
+        if last_comp_norm[idx] > 1e-6:
             g = network.structures[idx]
-            print(f"  ID {idx:4d}: {g} = {last_comp[idx]:.4f}")
+            print(f"  ID {idx:4d}: {g} = {last_comp_norm[idx]:.6f} (raw={last_comp[idx]:.4f})")
 
     return final_concs
 

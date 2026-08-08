@@ -7,14 +7,14 @@ Steady-state solver for the Golgi N-glycosylation reaction network based on the 
 This model describes the enzymatic modification of N-glycans across 4 cascaded CSTR compartments (CGC, MGC, TGC, TGN). It solves the steady-state mass balance equations to obtain the concentration distribution of all glycoforms.
 
 Steady-state equation:
-```
-c_{i,j} = c_{i,j-1} + tau_j * r_{i,j}
-```
+$$
+c_{i,j} = c_{i,j-1} + \tau_j * r_{i,j}
+$$
 
 Reaction rate (modified Michaelis-Menten):
-```
-r = kf * [Et] * [donor] * [Pi] / (Kmi * (Kmd + [donor]) * (1 + sum(Pj)/Kmj))
-```
+$$
+r = \frac{kf * [Et] * [donor] * [Pi] }{ K_{mi} * (K_{md} + [donor]) * (1 + \frac{\sum(Pj)}{K_{mj}})}
+$$
 
 ## File Structure
 
@@ -97,3 +97,6 @@ final_concs = model.solve(method='krylov', tol=1e-6, max_iter=100)
 - Python >= 3.8
 - numpy
 - scipy
+
+## Reference
+[1] Krambeck FJ, Betenbaugh MJ. A mathematical model of N-linked glycosylation. Biotechnol Bioeng. 2005 Dec 20;92(6):711-28. doi: 10.1002/bit.20645. 

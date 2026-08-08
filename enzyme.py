@@ -30,6 +30,7 @@ class Enzyme:
 
 
 Enzyme_RULES = [
+    # ManI
     {
         "name": "ManI",
         "condition": "g.man > 5",
@@ -38,30 +39,38 @@ Enzyme_RULES = [
         "Km": 100, "Kmd": 0, "kf": 1924,
         "adjustments": []
     },
+
+    # ManII
     {
         "name": "ManII",
         "condition": "g.man > 3 and g.br4 == 1 and g.gnb == 0",
         "product_struc": "Glycoform(g.man-1, g.fuc, g.gnb, g.br1, g.br2, g.br3, g.br4, g.gal, g.sia)",
-        "cosubstrate": None,
+        "cosubstrate": None,    
         "Km": 200, "Kmd": 0, "kf": 1924,
         "adjustments": [("g.man == 4", 0.50)]
     },
+
+    # FucT
     {
         "name": "FucT",
         "condition": "g.fuc == 0 and g.br4 > 0 and g.gnb == 0 and g.gal == 0",
         "product_struc": "Glycoform(g.man, g.fuc+1, g.gnb, g.br1, g.br2, g.br3, g.br4, g.gal, g.sia)",
         "cosubstrate": "GDP-Fuc",
         "Km": 25, "Kmd": 46, "kf": 253,
-        "adjustments": [("g.br2 > 0", 0.048)]
+        "adjustments": []
     },
+
+    # GnTI
     {
         "name": "GnTI",
         "condition": "g.br4 == 0 and g.man == 5",
         "product_struc": "Glycoform(g.man, g.fuc, g.gnb, g.br1, g.br2, g.br3, g.br4+1, g.gal, g.sia)",
         "cosubstrate": "UDP-GlcNAc",
         "Km": 260, "Kmd": 170, "kf": 990,
-        "adjustments": [("g.br2 == 0", 5.0)]
+        "adjustments": []
     },
+
+    # GnTII
     {
         "name": "GnTII",
         "condition": "g.br2 == 0 and g.man == 3 and g.br4 == 1 and g.gnb == 0",
@@ -70,6 +79,8 @@ Enzyme_RULES = [
         "Km": 190, "Kmd": 3100, "kf": 607,
         "adjustments": []
     },
+
+    # GnTIII
     {
         "name": "GnTIII",
         "condition": "g.gnb == 0 and g.br4 > 0 and g.gal == 0",
@@ -78,14 +89,18 @@ Enzyme_RULES = [
         "Km": 4000, "Kmd": 3100, "kf": 607,
         "adjustments": [("g.br2 > 0", 0.048)]
     },
+
+    # GnTIV
     {
         "name": "GnTIV",
         "condition": "g.br3 == 0 and g.br4 == 1 and g.gnb == 0",
         "product_struc": "Glycoform(g.man, g.fuc, g.gnb, g.br1, g.br2, g.br3+1, g.br4, g.gal, g.sia)",
         "cosubstrate": "UDP-GlcNAc",
         "Km": 3400, "Kmd": 8300, "kf": 187,
-        "adjustments": [("g.br2 == 0", 5), ("g.br2 > 1 or g.bra > 1", 1.5), ("g.br1 > 0", 0.178)]
+        "adjustments": [("g.br2 == 0", 5), ("g.br2 > 1 or g.br1 > 1", 1.5), ("g.br1 > 0", 0.178)]
     },
+
+    # GnTV
     {
         "name": "GnTV",
         "condition": "g.br1 == 0 and g.br2 == 1 and g.gnb == 0",
@@ -94,6 +109,8 @@ Enzyme_RULES = [
         "Km": 130, "Kmd": 3500, "kf": 1410,
         "adjustments": [("g.br3 > 0", 0.692)]
     },
+
+    # GnTE, 1
     {
         "name": "GnTE_Br1",
         "condition": "g.br1 == 2",
@@ -102,6 +119,8 @@ Enzyme_RULES = [
         "Km": 700, "Kmd": 55, "kf": 25,
         "adjustments": [("g.br2 == 0", 4)]
     },
+
+    # GnTE, 2
     {
         "name": "GnTE_Br2",
         "condition": "g.br2 == 2",
@@ -110,6 +129,8 @@ Enzyme_RULES = [
         "Km": 700, "Kmd": 55, "kf": 25,
         "adjustments": [("g.br1 == 0", 4)]
     },
+
+    # GnTE, 3
     {
         "name": "GnTE_Br3",
         "condition": "g.br3 == 2",
@@ -118,6 +139,8 @@ Enzyme_RULES = [
         "Km": 7000, "Kmd": 55, "kf": 25,
         "adjustments": [("g.br4 == 0", 4)]
     },
+
+    # GnTE, 4
     {
         "name": "GnTE_Br4",
         "condition": "g.br4 == 2",
@@ -126,6 +149,8 @@ Enzyme_RULES = [
         "Km": 7000, "Kmd": 55, "kf": 25,
         "adjustments": [("g.br3 == 0", 4)]
     },
+
+    # GalT, 1
     {
         "name": "GalT_Br1",
         "condition": "g.br1 == 1 or g.br1 == 4",
@@ -134,6 +159,8 @@ Enzyme_RULES = [
         "Km": 150, "Kmd": 0, "kf": 8712,
         "adjustments": [("g.gnb > 0 and g.br2 > 0", 3.62)]
     },
+
+    # GalT, 2
     {
         "name": "GalT_Br2",
         "condition": "g.br2 == 1 or g.br2 == 4",
@@ -142,6 +169,8 @@ Enzyme_RULES = [
         "Km": 135, "Kmd": 0, "kf": 8712,
         "adjustments": [("g.gnb > 0 and g.br2 > 0", 3.62)]
     },
+
+    # GalT, 3
     {
         "name": "GalT_Br3",
         "condition": "g.br3 == 1 or g.br3 == 4",
@@ -150,6 +179,8 @@ Enzyme_RULES = [
         "Km": 80, "Kmd": 0, "kf": 8712,
         "adjustments": [("g.gnb > 0 and g.br2 > 0", 3.62)]
     },
+
+    # GalT, 4
     {
         "name": "GalT_Br4",
         "condition": "g.br4 == 1 or g.br4 == 4",
@@ -158,6 +189,8 @@ Enzyme_RULES = [
         "Km": 4000, "Kmd": 0, "kf": 8712,
         "adjustments": [("g.gnb > 0 and g.br2 > 0", 3.62)]
     },
+
+    # SiaT, 1
     {
         "name": "SiaT_Br1",
         "condition": "g.br1 == 2 or g.br1 == 5",
@@ -166,6 +199,8 @@ Enzyme_RULES = [
         "Km": 260, "Kmd": 57, "kf": 484,
         "adjustments": [("g.sia > 1", 5.0)]
     },
+
+    # SiaT, 2
     {
         "name": "SiaT_Br2",
         "condition": "g.br2 == 2 or g.br2 == 5",
@@ -174,6 +209,8 @@ Enzyme_RULES = [
         "Km": 260, "Kmd": 57, "kf": 484,
         "adjustments": [("g.sia > 1", 5.0)]
     },
+
+    # SiaT, 3
     {
         "name": "SiaT_Br3",
         "condition": "g.br3 == 2 or g.br3 == 5",
@@ -182,6 +219,8 @@ Enzyme_RULES = [
         "Km": 260, "Kmd": 57, "kf": 484,
         "adjustments": [("g.sia > 1", 5.0)]
     },
+
+    # SiaT, 4
     {
         "name": "SiaT_Br4",
         "condition": "g.br4 == 2 or g.br4 == 5",
@@ -205,8 +244,8 @@ def build_enzymes() -> List[Enzyme]:
             Km=rule["Km"],
             Kmd=rule["Kmd"],
             kf=rule["kf"],
-            Km_adjust=lambda g, rule=rule: next(
-                (adj[1] for adj in rule.get("adjustments", [])
+            Km_adjust=lambda g, r=rule: next(
+                (adj[1] for adj in r.get("adjustments", [])
                  if eval("lambda g: " + adj[0])(g)), 1.0
             )
         )
