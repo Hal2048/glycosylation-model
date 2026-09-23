@@ -12,7 +12,11 @@ from enzyme import build_enzymes
 from reaction import ReactionNetwork
 from kinetics import KineticsCalculator
 from golgi_model import GolgiModel
-from config import TAU, DONOR_CONC, build_enzyme_dist
+from config import TAU, DONOR_CONC, build_enzyme_dist, ENZYME_RULES
+
+
+GLYCOFORM_FIELDS = ("man1", "man2", "man3", "fuc", "gnb",
+                    "br1", "br2", "br3", "br4", "gal", "sia", "br_o")
 
 
 def export_network(network: ReactionNetwork, out_dir: Path = None):
@@ -57,15 +61,58 @@ def export_network(network: ReactionNetwork, out_dir: Path = None):
     print(f"Structure list exported: {structures_file}")
 
 
+def export_distribution(
+    network: ReactionNetwork,
+    final_concs: np.ndarray,
+    out_dir: Path = None,
+    compartment_idx: int = -1,
+):
+    """
+    Exports the steady-state glycoform distribution to a tab-separated
+    ``distribution_data.txt`` file.
+    """
+    if out_dir is None:
+        out_dir = Path(__file__).parent
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    col_conc = final_concs[:, compartment_idx]
+    total = col_conc.sum()
+    abundances = col_conc / total if total > 0 else col_conc
+
+    order = np.argsort(-col_conc)  # descending by raw concentration
+    ranks = np.empty_like(order)
+    ranks[order] = np.arange(1, len(order) + 1)
+
+    dist_file = out_dir / "distribution_data.txt"
+    with open(dist_file, "w", encoding="utf-8") as f:
+        f.write("# Glycoform Distribution\n")
+        f.write(f"# Compartment Index: {compartment_idx}\n")
+        f.write(f"# Total Structures: {len(network.structures)}\n")
+        f.write(f"# Total Concentration: {total:.6e}\n")
+        f.write(
+            "# Columns: Rank\tID\tGlycoform Tuple ("
+            + ", ".join(GLYCOFORM_FIELDS)
+            + ")\tRaw Concentration\tNormalized Abundance\n"
+        )
+        for idx in order:
+            glyco = network.structures[int(idx)]
+            tup = tuple(getattr(glyco, name) for name in GLYCOFORM_FIELDS)
+            f.write(
+                f"{ranks[idx]}\t{int(idx)}\t{tup}\t{col_conc[idx]:.6e}\t"
+                f"{abundances[idx]:.6e}\n"
+            )
+    print(f"Distribution exported: {dist_file}")
+
+
 def main():
     # ---------- 1. Generate enzyme list ----------
-    enzymes = build_enzymes()
+    enzymes = build_enzymes(ENZYME_RULES)
 
     # ---------- 2. Generate reaction network ----------
     network = ReactionNetwork()
     initial_structures = [
-        Glycoform(9, 0, 0, 0, 0, 0, 0, 0, 0),
-        Glycoform(8, 0, 0, 0, 0, 0, 0, 0, 0),
+        Glycoform(2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        Glycoform(2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     ]
     network.generate_network(initial_structures, enzymes)
     n_structs = len(network.structures)
@@ -97,7 +144,7 @@ def main():
     # ---------- 6. Solve ----------
     # Damped iteration for small-scale debugging;
     # recommend method='krylov' for large-scale production runs
-    final_concs = model.solve_damped(tol=1e-6, max_iter=50, damping=0.3)
+    final_concs = model.solve_sparse(tol=1e-6, max_iter=50, verbose=True)
 
     # ---------- 7. Result output ----------
     print("\nSolution complete.")
@@ -114,9 +161,11 @@ def main():
 
     print("\nTop 10 glycoforms by concentration in TGN:")
     for idx in top_idx:
-        if last_comp_norm[idx] > 1e-6:
-            g = network.structures[idx]
-            print(f"  ID {idx:4d}: {g} = {last_comp_norm[idx]:.6f} (raw={last_comp[idx]:.4f})")
+        g = network.structures[idx]
+        print(f"  ID {idx:4d}: {g} = {last_comp_norm[idx]:.6f} (raw={last_comp[idx]:.4f})")
+
+    # ---------- 8. Export glycoform distribution ----------
+    export_distribution(network, final_concs, compartment_idx=-1)
 
     return final_concs
 
