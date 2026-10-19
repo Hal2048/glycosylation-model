@@ -1,0 +1,7 @@
+# Python bytecode cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Node.js dependencies (if ever used here)
+node_modules/

@@ -12,7 +12,7 @@ from enzyme import build_enzymes
 from reaction import ReactionNetwork
 from kinetics import KineticsCalculator
 from golgi_model import GolgiModel
-from config import TAU, DONOR_CONC, build_enzyme_dist, ENZYME_RULES
+from config import TAU, DONOR_CONC, ENZYME_CONC, build_enzyme_dist, ENZYME_RULES, TOT_GLYCAN_CONC
 
 
 GLYCOFORM_FIELDS = ("man1", "man2", "man3", "fuc", "gnb",
@@ -104,49 +104,64 @@ def export_distribution(
     print(f"Distribution exported: {dist_file}")
 
 
-def main():
-    # ---------- 1. Generate enzyme list ----------
-    enzymes = build_enzymes(ENZYME_RULES)
 
-    # ---------- 2. Generate reaction network ----------
+def run_model(initial_structures, enzyme_conc=None, donor_conc=None,
+              enzyme_rules=None, verbose=False):
+    """
+    Build and solve the model, returning (network, final_concs)
+    """
+    eff_enzyme_conc = ENZYME_CONC if enzyme_conc is None else {**ENZYME_CONC, **enzyme_conc}
+    eff_donor = DONOR_CONC if donor_conc is None else {**DONOR_CONC, **donor_conc}
+    rules = ENZYME_RULES if enzyme_rules is None else enzyme_rules
+
+    # ---------- Generate enzyme list ----------
+    enzymes = build_enzymes(rules)
+
+    # ---------- Generate reaction network ----------
     network = ReactionNetwork()
-    initial_structures = [
-        Glycoform(2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-        Glycoform(2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    ]
+
     network.generate_network(initial_structures, enzymes)
-    n_structs = len(network.structures)
-    print(f"Structures: {n_structs}, Reactions: {len(network.reactions)}")
 
-    # Export network to txt
-    export_network(network)
+    initial_feed = np.zeros(len(network.structures))
+    # initial_feed[0] =  TOT_GLYCAN_CONC * 0.91
+    # initial_feed[1] =  TOT_GLYCAN_CONC * 0.09
+    initial_feed[0] =  TOT_GLYCAN_CONC * 0.5
+    initial_feed[1] =  TOT_GLYCAN_CONC * 0.5
 
-    # ---------- 3. Initial feed ----------
-    initial_feed = np.zeros(n_structs)
-    initial_feed[:2] = 0.5  # M9 and M8 each account for 50%
-
-    # ---------- 4. Initialize KineticsCalculator ----------
+    # ---------- Initialize KineticsCalculator ----------
     kinetics = KineticsCalculator(network)
 
-    # ---------- 5. Build GolgiModel ----------
-    enzyme_dist = build_enzyme_dist()
-    # print(enzyme_dist)
+    # ---------- Build GolgiModel ----------
+    enzyme_dist = build_enzyme_dist(eff_enzyme_conc)
     model = GolgiModel(
         network=network,
         kinetics=kinetics,
         tau=TAU,
         enzyme_dist=enzyme_dist,
-        donor_conc=DONOR_CONC,
+        donor_conc=eff_donor,
         initial_feed=initial_feed,
     )
-    # print(f"Total variables: {n_structs} x {len(TAU)} = {n_structs * len(TAU)}")
 
-    # ---------- 6. Solve ----------
+    # ---------- Solve ----------
     # Damped iteration for small-scale debugging;
     # recommend method='krylov' for large-scale production runs
-    final_concs = model.solve_sparse(tol=1e-6, max_iter=50, verbose=True)
+    final_concs = model.solve_sparse(tol=1e-6, max_iter=50, verbose=verbose)
+    return network, final_concs
 
-    # ---------- 7. Result output ----------
+
+def main():
+    initial_structures = [
+        Glycoform(2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        Glycoform(2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    ]
+
+    network, final_concs = run_model(initial_structures=initial_structures, verbose=True)
+    n_structs = len(network.structures)
+    print(f"Structures: {n_structs}, Reactions: {len(network.reactions)}")
+
+    # ---------- 7. Export network & result output ----------
+    export_network(network)
+
     print("\nSolution complete.")
     print(f"Final concentration range: [{final_concs.min():.6f}, {final_concs.max():.4f}]")
 

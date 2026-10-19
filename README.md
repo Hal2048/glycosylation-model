@@ -1,174 +1,85 @@
-# Glycoform Reaction Network Model
+# Glycosylation Model
 
-Steady-state solver for the Golgi N-glycosylation reaction network based on the modified Michaelis-Menten equation.
+A model capable of quantitative predictions of glycosylation results, embedded with a steady-state solver for the Golgi N-glycosylation reaction network and visualization methods.
 
 ## Model Overview
 
-This model describes the enzymatic modification of N-glycans across 4 cascaded CSTR compartments (CGC, MGC, TGC, TGN). It solves the steady-state mass balance equations to obtain the concentration distribution of all glycoforms.
+The model simulates the enzymatic modification process of N-glycans across 4 cascaded Golgi compartments (CGC, MGC, TGC, TGN). It solves the steady-state mass balance equations to obtain the concentration distribution of all glycoforms.
 
 Steady-state equation:
 $$
-c_{i,j} = c_{i,j-1} + \tau_j * r_{i,j}
+c_{i,j} = c_{i,j-1} + \tau * r_{i,j}
 $$
 
 Reaction rate (modified Michaelis-Menten):
 $$
-r = \frac{kf * [Et] * [donor] * [Pi] }{ K_{mi} * (K_{md} + [donor]) * (1 + \frac{\sum(Pj)}{K_{mj}})}
+r = \frac{k_f [E_t] [\text{donor}] [G_i] }{ K_{m,i} (K_{m,d} + [\text{donor}])  (1 + \sum{\frac{(G_j)}{K_{m,j}}})}
 $$
 
 ## File Structure
 
 ```
-model/
+glycosylation-model
 ├── __init__.py        # Package init
-├── glycoform.py       # Glycoform class (9-digit encoded glycan structure)
-├── enzyme.py          # Enzyme class + 20 enzyme rules + build_enzymes()
-├── reaction.py        # Reaction class + ReactionNetwork class
-├── kinetics.py        # KineticsCalculator (competitive sum 1+sum(c/Km))
-├── golgi_model.py     # GolgiModel (residual function + steady-state solver)
-├── config.py          # Parameter configuration (tau, enzyme dist, donor conc, etc.)
-├── main.py            # Main program entry point
+├── glycoform.py       # Defines the glycoform class
+├── enzyme.py          # Defines the Enzyme class 
+├── reaction.py        # Defines the Reaction class and ReactionNetwork class
+├── kinetics.py        # Defines the KineticsCalculator class
+├── golgi_model.py     # Defines the GolgiModel class
+├── config.py          # Parameter configuration 
+├── main.py            # Main program 
+├── visualization.py   # Load distribution data and visualize
+├── draw_glycan/       # Glycan strucutre renderer
+├── test/              # Testing scripts used in [wiki](https://2026.igem.wiki/fudan/model#results)
 └── README.md          # This file
 ```
 
 ## How to Run
 
-### Option 1: Direct execution (recommended)
-
 ```bash
-cd Model_versions
-python model/main.py
+cd glycosylation-model
+python glycosylation-model/main.py
 ```
 
-### Option 2: As a module
+For visualization:
 
 ```bash
-cd Model_versions
-python -m model.main
+python visualization.py
 ```
+
 
 ## Parameter Configuration
 
-All tunable parameters are centralized in `config.py`:
+All tunable parameters are in `config.py`:
 
-| Parameter | Description | Current Value |
-|-----------|-------------|---------------|
-| `TAU` | Residence time per compartment (s) | [5.56, 5.56, 5.56, 5.56] |
-| `DONOR_CONC` | Donor concentrations (uM) | See config.py |
-| `TOTAL_ENZYME_CONC` | Total enzyme concentrations (uM) | See config.py |
-| `DIST_MATRIX` | Enzyme compartment distribution ratio | 4x10 matrix |
 
 ## Output
 
-After running, the following files are generated in the `model/` directory:
-
+After running, the following files are generated in the `glycosylation-model/` directory:
 - `network_reactions.txt` — List of all reactions
 - `network_structures.txt` — All glycoform structures and their participating reactions
+- `distribution_data.txt` - Abundance of glycoform structures
 
-Console output includes:
-- Number of structures / reactions / total variables
-- Iteration convergence info
-- Total concentration per compartment
-- Top 10 glycoforms by concentration in TGN
+For visualization, the following files are additionally generated:
 
-## Solver Selection
+- `top10.png` — Bar chart of the top-10 glycoform normalized abundances
+- `top10_structures.svg` — Top-10 glycan structures
 
-`GolgiModel` provides two solving methods:
 
-1. **`solve_damped()`** — Damped Picard iteration
-   - No Jacobian computation, memory-friendly
-   - Suitable for debugging and small-scale testing
-
-2. **`solve(method='krylov')`** — Krylov subspace method
-   - Suitable for large-scale sparse problems (~30K variables)
-   - Recommended for production calculations
-
-Switch in `main.py`:
-```python
-# Damped iteration (debugging)
-final_concs = model.solve_damped(tol=1e-6, max_iter=50, damping=0.3)
-
-# Krylov method (large-scale)
-final_concs = model.solve(method='krylov', tol=1e-6, max_iter=100)
-```
 
 ## Dependencies
 
-- Python >= 3.8
+- Python >= 3.10
 - numpy
 - scipy
 
+For visualization:
+
+- matplotlib
+
+
 ## Reference
-[1] Krambeck FJ, Betenbaugh MJ. A mathematical model of N-linked glycosylation. Biotechnol Bioeng. 2005 Dec 20;92(6):711-28. doi: 10.1002/bit.20645. 
+[1] Krambeck, F. J., & Betenbaugh, M. J. (2005). A mathematical model of N-linked glycosylation. Biotechnology and bioengineering, 92(6), 711–728. https://doi.org/10.1002/bit.20645    
+[2] Mehta, A. Y., & Cummings, R. D. (2020). GlycoGlyph: a glycan visualizing, drawing and naming application. Bioinformatics (Oxford, England), 36(11), 3613–3614. https://doi.org/10.1093/bioinformatics/btaa190
 
 ---
-
-## Glycan Structure Drawing (`glycan_drawer/`)
-
-A headless wrapper around GlycoGlyph (Mehta et al., 2020). Takes an IUPAC-condensed glycan string and emits a self-contained SVG or PNG structure image.
-
-### File Structure
-
-```
-glycan_drawer/
-├── __init__.py           # Python public API: draw(), to_svg(), to_png()
-├── js/
-│   └── glycoglyph.min.js # GlycoGlyph bundled library (drawing core only)
-├── assets/
-│   ├── monos.svg         # Monosaccharide symbol library (70+ sugars)
-│   └── glycoglyph.css    # UI stylesheet (only a handful of rules are used during drawing)
-└── node/
-    ├── draw.js           # Node.js headless renderer (jsdom + d3)
-    ├── package.json      # npm dependency manifest
-    └── node_modules/     # Auto-generated by `npm install`
-```
-
-### Quick Start
-
-```bash
-# 1. Install Node.js dependencies (one-time)
-cd glycan_drawer/node && npm install
-
-# 2. Command line
-cd ../..
-python -m glycan_drawer "Mana1-6(Mana1-3)Manb1-4GlcNAcb1-4GlcNAcb1" -o n_core.svg
-python -m glycan_drawer "Galb1-4GlcNAc" -o disaccharide.png
-
-# 3. From Python
-from glycan_drawer import draw
-draw("Neu5Aca2-3Galb1-4GlcNAc", "out.png")
-```
-
-### Python API
-
-```python
-from glycan_drawer import draw, to_svg, to_png
-
-# Save to file (format picked from extension)
-draw("Gal(b1-4)Glc", "out.svg")
-draw("Gal(b1-4)Glc", "out.png", scale=2.0)
-
-# Get bytes / strings directly
-svg: str  = to_svg("Gal(b1-4)Glc")              # self-contained SVG
-png: bytes = to_png("Gal(b1-4)Glc", scale=3.0)  # PNG bytes
-```
-
-All three functions accept optional `width`, `height`, `orientation` (`"bottom-to-top"` or `"right-to-left"`) and (for PNG) a `scale` factor.
-
-### Dependencies
-
-| Component | Required? | Notes |
-|---|---|---|
-| Python ≥ 3.8 | Yes | Runs the Python wrapper. |
-| Node.js ≥ 16 | Yes | Runs the headless renderer. If `node_modules` is missing, the wrapper auto-runs `npm install`. |
-| `jsdom`, `d3` | Yes | Installed by `npm install`. For air-gapped environments, run `npm install` once beforehand. |
-| `cairosvg` | Optional | Preferred PNG path. |
-| Microsoft Edge / Chrome | Optional | Fallback for PNG when `cairosvg` is unavailable. The Windows Edge that ships with the OS already qualifies, so no extra install is needed on Windows. |
-
-**PNG output strategy**: `cairosvg` is attempted first; on failure the wrapper automatically retries with a headless Edge/Chrome screenshot. A clean `RuntimeError` is raised only when both paths fail.
-
-### Implementation Notes
-
-- The IUPAC parser and drawing routines are inherited verbatim from the original GlycoGlyph, so any input-format limitations of that tool apply here too (branches must use parentheses; single chains may omit them).
-- For complex structures (depth ≥ 5 or ≥ 3 branches), pass larger `width` / `height` to avoid overlapping symbols.
-- The emitted SVG is self-contained: every `<use href="monos.svg#…">` is inlined as a real `<svg viewBox=…>`, so the file opens correctly in any SVG viewer without the original asset bundle. 
